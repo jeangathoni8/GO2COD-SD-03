@@ -1,35 +1,88 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Game } from './game';
+import { GameChoice } from './components/GameChoice';
+import { GameResult } from './components/GameResult';
+import { ScoreBoard } from './components/ScoreBoard';
+
+const choices = ['🪨', '📃', '✂️'];
+const choiceNames = ['rock', 'paper', 'scissors'];
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [game] = useState(() => new Game());
+  const [result, setResult] = useState(null);
+  const [playerChoice, setPlayerChoice] = useState(null);
+  const [computerChoice, setComputerChoice] = useState(null);
+  const [, forceUpdate] = useState();
+
+  const handleChoice = (_choice, index) => {
+    const computerIndex = Math.floor(Math.random() * 3);
+    const computerMove = choiceNames[computerIndex];
+    
+    setPlayerChoice(index);
+    setComputerChoice(computerIndex);
+    
+    const roundResult = game.determineWinner(choiceNames[index], computerMove);
+    
+    if (roundResult === 'player') {
+      game.playerScore++;
+    } else if (roundResult === 'computer') {
+      game.computerScore++;
+    }
+    
+    setResult(roundResult);
+  };
+
+  const handlePlayAgain = () => {
+    setResult(null);
+    setPlayerChoice(null);
+    setComputerChoice(null);
+  };
+
+  const handleResetGame = () => {
+    game.resetScore();
+    handlePlayAgain();
+    forceUpdate({});
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <motion.h1 
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="text-4xl md:text-6xl font-bold text-center mb-12 text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400"
+      >
+        Rock Paper Scissors
+      </motion.h1>
+
+      <div className="flex gap-8 mb-12">
+        {choices.map((choice, index) => (
+          <GameChoice
+            key={choice}
+            choice={choice}
+            index={index}
+            onClick={handleChoice}
+          />
+        ))}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+
+      {result && (
+        <GameResult
+          playerChoice={playerChoice}
+          computerChoice={computerChoice}
+          result={result}
+          choices={choices}
+          onPlayAgain={handlePlayAgain}
+          onResetGame={handleResetGame}
+        />
+      )}
+
+      <ScoreBoard
+        playerScore={game.playerScore}
+        computerScore={game.computerScore}
+      />
+    </div>
+  );
 }
 
-export default App
+export default App;
